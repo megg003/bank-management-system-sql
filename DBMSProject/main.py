@@ -363,7 +363,66 @@ def admin():
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('homepage'))  # Redirect to homepage if user is not admin
 
-    return render_template('admin.html')
+    return render_template('admin.html')  # Render the admin dashboard page
+
+@app.route('/admin/manage_users')
+def manage_users():
+    user_id = session.get('user_id')
+    is_admin = session.get('is_admin')
+
+    if not user_id or not is_admin:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('homepage'))  # Redirect to homepage if the user is not an admin
+
+    users = UserInfo.query.all()  # Fetch all users
+    return render_template('manage_users.html', users=users)
+
+
+
+@app.route('/admin/transactions')
+def view_transactions():
+    user_id = session.get('user_id')
+    user = UserInfo.query.get(user_id)
+
+    if not user or user.access_type.lower() != 'admin':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('homepage'))
+
+    # Fetch recent transactions or all transactions
+    transactions = Transaction.query.order_by(Transaction.date.desc()).all()
+    return render_template('transactions.html', transactions=transactions)
+
+@app.route('/admin/approve_loans')
+def approve_loans():
+    user_id = session.get('user_id')
+    user = UserInfo.query.get(user_id)
+
+    if not user or user.access_type.lower() != 'admin':
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('homepage'))
+
+    # Get pending loan applications for approval
+    pending_loans = Loan.query.filter_by(status='pending').all()
+    return render_template('approve_loans.html', loans=pending_loans)
+
+# Route to view a user
+@app.route('/view_user/<int:user_id>')
+def view_user(user_id):
+    user = UserInfo.query.get(user_id)
+    if user:
+        return render_template('view_user.html', user=user)
+    return redirect(url_for('manage_users'))
+
+# Route to delete a user
+@app.route('/delete_user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    user = UserInfo.query.get(user_id)
+    if user:
+        db.session.delete(user)
+        db.session.commit()
+    return redirect(url_for('manage_users'))
+
+
 
 
 if __name__ == '__main__':
