@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Manage Users</h2>
+    <div class="card shadow-lg" style="border-radius: 10px;">
+        <div class="card-body">
+            <h5 class="card-title">User Accounts</h5>
+            <p class="card-text">Here you can view and manage user accounts in the system.</p>
+            
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.user_id }}</td>
+                        <td>{{ user.first_name }} {% if user.middle_name %}{{ user.middle_name }} {% endif %}{{ user.last_name }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            <a href="{{ url_for('view_user', user_id=user.user_id) }}" class="btn btn-info btn-sm">View</a>
+                            <a href="{{ url_for('delete_user', user_id=user.user_id) }}" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Delete</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
