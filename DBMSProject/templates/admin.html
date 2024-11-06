@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Admin Dashboard</h2>
+    <div class="card shadow-lg" style="border-radius: 10px;">
+        <div class="card-body">
+            <h5 class="card-title">Manage Users</h5>
+            <p class="card-text">Here you can manage user accounts, view transactions, and handle loan applications.</p>
+            <a href="/manage_users" class="btn btn-primary">Manage Users</a>
+            <a href="/view_transactions" class="btn btn-primary">View Transactions</a>
+            <a href="/loan_applications" class="btn btn-primary">Loan Applications</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

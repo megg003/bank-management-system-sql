@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Account Details</h2>
+    <div class="card shadow" style="border-radius: 15px; background-color: #004d40;">
+        <div class="card-body">
+            {% if user %}
+            <ul class="list-group">
+                <li class="list-group-item">
+                    <strong>Account ID:</strong> {{ user.account_id }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Account Holder Name:</strong> {{ user.first_name }} {{ user.last_name }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Account Type:</strong> {{ user.access_type }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Email:</strong> {{ user.email }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Phone Number:</strong> {{ user.phone_number }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Address:</strong> {{ user.address }}, {{ user.city }}, {{ user.state }}, {{ user.pincode }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Date of Birth:</strong> {{ user.date_of_birth.strftime('%Y-%m-%d') }}
+                </li>
+                <li class="list-group-item">
+                    <strong>Status:</strong> {{ user.user_status.value }}
+                </li>
+            </ul>
+            {% else %}
+            <div class="alert alert-danger">Account not found.</div>
+            {% endif %}
+            <div class="text-center mt-4">
+                <a href="{{ url_for('update_user') }}" class="btn btn-primary">Edit Profile</a>
+                <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Back to Home</a>
+                <!-- Logout Button -->
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

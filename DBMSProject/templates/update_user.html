@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Update Your Details</h2>
+    <div class="card shadow" style="border-radius: 15px; background-color: #004d40;">
+        <div class="card-body">
+            <form method="POST">
+                <div class="mb-3">
+                    <label for="first_name" class="form-label" style="color: #ffffff;">First Name</label>
+                    <input type="text" name="first_name" id="first_name" class="form-control" value="{{ user.first_name }}" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="middle_name" class="form-label" style="color: #ffffff;">Middle Name</label>
+                    <input type="text" name="middle_name" id="middle_name" class="form-control" value="{{ user.middle_name }}" style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="last_name" class="form-label" style="color: #ffffff;">Last Name</label>
+                    <input type="text" name="last_name" id="last_name" class="form-control" value="{{ user.last_name }}" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label" style="color: #ffffff;">Email</label>
+                    <input type="email" name="email" id="email" class="form-control" value="{{ user.email }}" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="phone_number" class="form-label" style="color: #ffffff;">Phone Number</label>
+                    <input type="text" name="phone_number" id="phone_number" class="form-control" value="{{ user.phone_number }}" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="city" class="form-label" style="color: #ffffff;">City</label>
+                    <input type="text" name="city" id="city" class="form-control" value="{{ user.city }}" style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="state" class="form-label" style="color: #ffffff;">State</label>
+                    <input type="text" name="state" id="state" class="form-control" value="{{ user.state }}" style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="pincode" class="form-label" style="color: #ffffff;">Pincode</label>
+                    <input type="text" name="pincode" id="pincode" class="form-control" value="{{ user.pincode }}" style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label" style="color: #ffffff;">Address</label>
+                    <textarea name="address" id="address" class="form-control" rows="3" style="border-color: #ffca28; background-color: #e8f5e9;">{{ user.address }}</textarea>
+                </div>
+                <button type="submit" class="btn" style="background-color: yellow; color: black;">Update Details</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

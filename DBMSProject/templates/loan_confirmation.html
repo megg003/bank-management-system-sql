@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5" style="text-align: center;">
+    <h1>Loan Application Submitted!</h1>
+    <div class="confirmation-box">
+        <p>Your loan application has been successfully submitted.</p>
+        <p class="tracking-id">Tracking ID: {{ tracking_id }}</p>
+        <p>Thank you for applying!</p>
+    </div>
+</div>
+
+<style>
+    body {
+        background-color: rgba(144, 238, 144, 1); /* Light green background */
+    }
+    .confirmation-box {
+        background-color: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: inline-block;
+        margin-top: 20px;
+    }
+    h1 {
+        color: #004d40; /* Dark teal color */
+    }
+    p {
+        color: #004d40; /* Dark teal color for text */
+    }
+    .tracking-id {
+        font-weight: bold;
+        color: #ffca28; /* Light yellow for tracking ID */
+        font-size: 1.2rem;
+    }
+</style>
+{% endblock %}

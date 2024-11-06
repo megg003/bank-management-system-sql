@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Create Your Account</h2>
+    <div class="card shadow" style="border-radius: 15px; background-color: #004d40;">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('register') }}">
+                <!-- First Name -->
+                <div class="mb-3">
+                    <label for="first_name" class="form-label" style="color: #ffffff;">First Name</label>
+                    <input type="text" class="form-control" id="first_name" name="first_name" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Middle Name -->
+                <div class="mb-3">
+                    <label for="middle_name" class="form-label" style="color: #ffffff;">Middle Name</label>
+                    <input type="text" class="form-control" id="middle_name" name="middle_name" style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Last Name -->
+                <div class="mb-3">
+                    <label for="last_name" class="form-label" style="color: #ffffff;">Last Name</label>
+                    <input type="text" class="form-control" id="last_name" name="last_name" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label for="username" class="form-label" style="color: #ffffff;">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label for="password" class="form-label" style="color: #ffffff;">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Date of Birth -->
+                <div class="mb-3">
+                    <label for="dob" class="form-label" style="color: #ffffff;">Date of Birth</label>
+                    <input type="date" class="form-control" id="dob" name="dob" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Phone Number -->
+                <div class="mb-3">
+                    <label for="phoneNumber" class="form-label" style="color: #ffffff;">Phone Number</label>
+                    <input type="tel" class="form-control" id="phoneNumber" name="phoneNumber" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label for="email" class="form-label" style="color: #ffffff;">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Address -->
+                <div class="mb-3">
+                    <label for="address" class="form-label" style="color: #ffffff;">Address</label>
+                    <input type="text" class="form-control" id="address" name="address" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- City -->
+                <div class="mb-3">
+                    <label for="city" class="form-label" style="color: #ffffff;">City</label>
+                    <input type="text" class="form-control" id="city" name="city" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- State -->
+                <div class="mb-3">
+                    <label for="state" class="form-label" style="color: #ffffff;">State</label>
+                    <input type="text" class="form-control" id="state" name="state" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Pin Code -->
+                <div class="mb-3">
+                    <label for="pincode" class="form-label" style="color: #ffffff;">Pin Code</label>
+                    <input type="text" class="form-control" id="pincode" name="pincode" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                </div>
+
+                <!-- Access Type -->
+                <div class="mb-3">
+                    <label for="accessType" class="form-label" style="color: #ffffff;">Access Type</label>
+                    <select class="form-select" id="accessType" name="accessType" required style="border-color: #ffca28; background-color: #e8f5e9;">
+                        <option value="Customer">Customer</option>
+                        <option value="Bank Employee">Bank Employee</option>
+                        <option value="Admin">Admin</option>
+                    </select>
+                </div>
+
+                <!-- Submit and Clear Buttons -->
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn" style="background-color: yellow; color: black;">Submit</button>
+                    <button type="reset" class="btn btn-outline-secondary">Clear</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

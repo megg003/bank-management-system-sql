@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+        <div class="container mt-3">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endwith %}
+
+<!-- Hero Section -->
+<div class="hero-section d-flex align-items-center justify-content-center position-relative" style="background-color: #004d40; color: white; height: 80vh;">
+    <div class="text-center" style="z-index: 1;">
+        <h1 class="display-4 fw-bold">Your Financial Partner <span style="color: #ffca28;">for Growth.</span></h1>
+        <p class="lead">Empowering Your Future</p>
+        <p class="mb-4" style="max-width: 600px; margin: 0 auto;">
+            We offer tailored banking solutions to help individuals and businesses succeed. From flexible loans to secure online banking, we've got you covered.
+        </p>
+        <div>
+            <a href="{{ url_for('login') }}" class="btn btn-outline-light" style="color: #fff; border-color: #fff;">Get Started</a>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action Section -->
+<div class="container text-center my-5 py-5" style="background-color: #004d40;">
+    <h2 class="fw-bold" style="color: white; font-size: 2.5rem;">Ready to Start Your Financial Journey?</h2>
+    <p style="font-size: 1.2rem; color: #ffffff;">Join our family and experience banking that grows with you. Secure, reliable, and here to empower you.</p>
+    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg" style="background-color: #ffca28; border: none; font-size: 1.2rem;">Open an Account</a>
+</div>
+
+<!-- Services Section -->
+<div class="container my-5">
+    <h2 class="text-center fw-bold mb-4" style="color: #004d40; font-size: 2.5rem;">Our Services</h2>
+    <div class="row text-center">
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow" style="background-color: #004d40; color: white;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #ffca28;">Personal Banking</h5>
+                    <p class="card-text">Secure accounts, seamless transactions, and financial advice tailored to you.</p>
+                    <a href="{{ url_for('deposit') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Deposit</a>
+                    <a href="{{ url_for('withdraw') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Withdraw</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow" style="background-color: #004d40; color: white;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #ffca28;">Business Loans</h5>
+                    <p class="card-text">Get access to the funds you need to expand your business and achieve your goals.</p>
+                    <a href="{{ url_for('loan') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Learn More</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card border-0 shadow" style="background-color: #004d40; color: white;">
+                <div class="card-body">
+                    <h5 class="card-title" style="color: #ffca28;">Investment Plans</h5>
+                    <p class="card-text">Grow your wealth with our diversified and expertly managed investment options.</p>
+                    <a href="#" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

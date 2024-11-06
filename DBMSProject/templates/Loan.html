@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Apply for a Loan</h2>
+    <div class="card shadow-lg" style="border-radius: 10px; background-color: #004d40;">
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="loan_type" class="form-label" style="color: white;">Select Loan Type:</label>
+                    <select name="loan_type" id="loan_type" class="form-select" required>
+                        <option value="">-- Select Loan Type --</option>
+                        <option value="personal">Personal Loan</option>
+                        <option value="home">Home Loan</option>
+                        <option value="auto">Auto Loan</option>
+                        <option value="education">Education Loan</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="loan_amount" class="form-label" style="color: white;">Loan Amount:</label>
+                    <input type="number" name="loan_amount" id="loan_amount" class="form-control" step="0.01" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="interest_rate" class="form-label" style="color: white;">Interest Rate (% per annum):</label>
+                    <select name="interest_rate" id="interest_rate" class="form-select" required>
+                        <option value="">-- Select Interest Rate --</option>
+                        <option value="5">5%</option>
+                        <option value="7.5">7.5%</option>
+                        <option value="10">10%</option>
+                        <option value="12.5">12.5%</option>
+                        <option value="15">15%</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="tenure" class="form-label" style="color: white;">Tenure (months):</label>
+                    <select name="tenure" id="tenure" class="form-select" required>
+                        <option value="">-- Select Tenure --</option>
+                        <option value="12">12 months</option>
+                        <option value="24">24 months</option>
+                        <option value="36">36 months</option>
+                        <option value="48">48 months</option>
+                        <option value="60">60 months</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="documents" class="form-label" style="color: white;">Upload Documents:</label>
+                    <input type="file" name="documents" id="documents" class="form-control" multiple required>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <button type="button" id="calculate_emi" class="btn btn-primary">Calculate EMI</button>
+                    <button type="submit" class="btn btn-success">Submit Application</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="emi_result" class="mt-4" style="display:none;">
+        <h3 style="color: #004d40;">EMI Result</h3>
+        <p id="emi_output"></p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('calculate_emi').onclick = function() {
+        var loanAmount = parseFloat(document.getElementById('loan_amount').value);
+        var interestRate = parseFloat(document.getElementById('interest_rate').value) / 100 / 12;
+        var tenure = parseInt(document.getElementById('tenure').value);
+
+        if (isNaN(loanAmount) || isNaN(interestRate) || isNaN(tenure) || tenure <= 0) {
+            alert("Please enter valid inputs for loan amount, interest rate, and tenure.");
+            return;
+        }
+
+        // EMI calculation formula
+        var emi = (loanAmount * interestRate * Math.pow(1 + interestRate, tenure)) / 
+                  (Math.pow(1 + interestRate, tenure) - 1);
+
+        document.getElementById('emi_output').innerText = "Your EMI is: ₹" + emi.toFixed(2);
+        document.getElementById('emi_result').style.display = "block";
+    };
+</script>
+{% endblock %}

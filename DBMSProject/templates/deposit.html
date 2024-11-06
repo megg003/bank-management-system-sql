@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex align-items-center justify-content-center" style="height: 80vh; background-color: #004d40;">
+    <div class="p-5" style="background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;">
+        <h2 class="text-center mb-4" style="color: #004d40;">Deposit Money</h2>
+        <form method="POST" action="/deposit">
+            <div class="mb-3">
+                <label for="amount" class="form-label" style="color: #343a40;">Deposit Amount</label>
+                <input type="number" class="form-control" id="amount" name="amount" required style="border-color: #ffca28;">
+            </div>
+            <div class="mb-3">
+                <label for="account" class="form-label" style="color: #343a40;">Account Number</label>
+                <input type="text" class="form-control" id="account" name="account" required style="border-color: #ffca28;">
+            </div>
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary" style="background-color: #004d40; border-color: #004d40;">Deposit</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
