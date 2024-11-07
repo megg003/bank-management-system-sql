@@ -97,7 +97,7 @@ def login():
             session['user_id'] = user.user_id  # Store user ID in session
             session['is_admin'] = user.access_type.lower() == 'admin'  # Store admin status in session
             print(f"User is admin: {session['is_admin']}")
-            flash(f'Logged in successfully! Your user ID is {user.user_id}', 'success')
+            flash(f'Logged in successfully!', 'success')
             return redirect(url_for('homepage'))  # Redirect to homepage or other page
         else:
             flash('Incorrect password. Please try again.', 'danger')
