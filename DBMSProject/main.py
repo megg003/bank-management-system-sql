@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_from_directory
 import nest_asyncio
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -19,7 +19,7 @@ nest_asyncio.apply()
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-app.config['UPLOAD_FOLDER'] = 'uploads/'
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -73,7 +73,7 @@ class Loan(db.Model):
     interest_rate = db.Column(db.Numeric(5, 2))
     tenure = db.Column(db.Integer)
     documents = db.Column(db.String(255))
-    status = db.Column(db.Enum(LoanStatus), default=LoanStatus.PENDING.value)  # Use Enum's value
+    status = db.Column(db.String(20), nullable=False, default='pending')  # 'pending' as default
     created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     tracking_id = db.Column(db.String(36), unique=True, nullable=False)  # New field for tracking ID
@@ -97,7 +97,7 @@ def login():
             session['user_id'] = user.user_id  # Store user ID in session
             session['is_admin'] = user.access_type.lower() == 'admin'  # Store admin status in session
             print(f"User is admin: {session['is_admin']}")
-            flash(f'Logged in successfully! Your user ID is {user.user_id}', 'success')
+            flash(f'Logged in successfully!', 'success')
             return redirect(url_for('homepage'))  # Redirect to homepage or other page
         else:
             flash('Incorrect password. Please try again.', 'danger')
@@ -377,8 +377,6 @@ def manage_users():
     users = UserInfo.query.all()  # Fetch all users
     return render_template('manage_users.html', users=users)
 
-
-
 @app.route('/admin/transactions')
 def view_transactions():
     user_id = session.get('user_id')
@@ -392,18 +390,58 @@ def view_transactions():
     transactions = Transaction.query.order_by(Transaction.date.desc()).all()
     return render_template('transactions.html', transactions=transactions)
 
-@app.route('/admin/approve_loans')
-def approve_loans():
+@app.route('/admin/loans')
+def manage_loans():
+    # Check if the logged-in user is an admin
     user_id = session.get('user_id')
-    user = UserInfo.query.get(user_id)
+    is_admin = session.get('is_admin')
+    if not user_id or not is_admin:
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('homepage'))  # Redirect if not an admin
+    
+    # Fetch all loan applications
+    loans = Loan.query.order_by(Loan.created_at.desc()).all()
+    return render_template('manage_loans.html', loans=loans)
 
-    if not user or user.access_type.lower() != 'admin':
+@app.route('/admin/approve_loan/<int:loan_id>', methods=['POST'])
+def approve_loan(loan_id):
+    # Check admin authorization
+    if not session.get('is_admin'):
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('homepage'))
+    
+    # Approve the loan application
+    loan = Loan.query.get(loan_id)
+    if loan:
+        loan.status = LoanStatus.APPROVED.value
+        db.session.commit()
+        flash('Loan application approved successfully!', 'success')
+    else:
+        flash('Loan application not found.', 'danger')
+    
+    return redirect(url_for('manage_loans'))
 
-    # Get pending loan applications for approval
-    pending_loans = Loan.query.filter_by(status='pending').all()
-    return render_template('approve_loans.html', loans=pending_loans)
+@app.route('/admin/deny_loan/<int:loan_id>', methods=['POST'])
+def deny_loan(loan_id):
+    # Check admin authorization
+    if not session.get('is_admin'):
+        flash('Unauthorized access.', 'danger')
+        return redirect(url_for('homepage'))
+    
+    # Deny the loan application
+    loan = Loan.query.get(loan_id)
+    if loan:
+        loan.status = LoanStatus.REJECTED.value
+        db.session.commit()
+        flash('Loan application denied.', 'success')
+    else:
+        flash('Loan application not found.', 'danger')
+    
+    return redirect(url_for('manage_loans'))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(os.path.join(app.root_path, 'uploads'), filename)
 
 # Route to view a user
 @app.route('/view_user/<int:user_id>')
