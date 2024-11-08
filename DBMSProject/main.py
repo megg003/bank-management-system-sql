@@ -252,6 +252,12 @@ def account_details():
     
     return render_template('account_details.html', user=user, loans=loans)  # Pass user and loans to the template
 
+@app.route('/pay_emi/<int:loan_id>', methods=['POST', 'GET'])
+def pay_emi(loan_id):
+    # Logic for processing EMI payment for the loan with the specified loan_id
+    # For example, deduct from user’s balance, update loan payment history, etc.
+    # Redirect to account details page after payment
+    return redirect(url_for('account_details'))
 
 @app.route('/update_user', methods=['GET', 'POST'])
 def update_user():
