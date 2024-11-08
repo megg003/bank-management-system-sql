@@ -429,15 +429,33 @@ def approve_loan(loan_id):
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('homepage'))
     
-    # Approve the loan application
+    # Retrieve the loan and user information
     loan = Loan.query.get(loan_id)
     if loan:
         loan.status = LoanStatus.APPROVED.value
         db.session.commit()
-        flash('Loan application approved successfully!', 'success')
-    else:
-        flash('Loan application not found.', 'danger')
-    
+
+        # Retrieve the user associated with the loan
+        user = UserInfo.query.get(loan.user_id)
+        
+        # Send email notification to the user
+        if user:
+            try:
+                msg = Message(
+                    'Loan Application Approved',
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[user.email]
+                )
+                msg.body = (f"Dear {user.first_name},\n\n"
+                            f"Your loan application with tracking ID {loan.tracking_id} "
+                            f"has been approved.\n\nThank you for choosing our bank.")
+                mail.send(msg)
+                flash('Loan approved, and notification email sent.', 'success')
+            except Exception as e:
+                flash(f'Loan approved, but email notification failed: {e}', 'warning')
+        else:
+            flash('User associated with this loan could not be found.', 'danger')
+
     return redirect(url_for('manage_loans'))
 
 @app.route('/admin/deny_loan/<int:loan_id>', methods=['POST'])
@@ -446,16 +464,35 @@ def deny_loan(loan_id):
     if not session.get('is_admin'):
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('homepage'))
-    
-    # Deny the loan application
+
+    # Retrieve the loan and user information
     loan = Loan.query.get(loan_id)
     if loan:
         loan.status = LoanStatus.REJECTED.value
         db.session.commit()
-        flash('Loan application denied.', 'success')
-    else:
-        flash('Loan application not found.', 'danger')
-    
+
+        # Retrieve the user associated with the loan
+        user = UserInfo.query.get(loan.user_id)
+        
+        # Send email notification to the user
+        if user:
+            try:
+                msg = Message(
+                    'Loan Application Denied',
+                    sender=app.config['MAIL_DEFAULT_SENDER'],
+                    recipients=[user.email]
+                )
+                msg.body = (f"Dear {user.first_name},\n\n"
+                            f"Your loan application with tracking ID {loan.tracking_id} "
+                            f"has been denied. If you have any questions, please contact our support team.\n\n"
+                            f"Thank you for choosing our bank.")
+                mail.send(msg)
+                flash('Loan denied, and notification email sent.', 'success')
+            except Exception as e:
+                flash(f'Loan denied, but email notification failed: {e}', 'warning')
+        else:
+            flash('User associated with this loan could not be found.', 'danger')
+
     return redirect(url_for('manage_loans'))
 
 @app.route('/uploads/<filename>')
@@ -478,9 +515,6 @@ def delete_user(user_id):
         db.session.delete(user)
         db.session.commit()
     return redirect(url_for('manage_users'))
-
-
-
 
 if __name__ == '__main__':
     app.run(debug=True)
