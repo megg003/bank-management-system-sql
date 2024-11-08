@@ -23,18 +23,6 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="interest_rate" class="form-label" style="color: white;">Interest Rate (% per annum):</label>
-                    <select name="interest_rate" id="interest_rate" class="form-select" required>
-                        <option value="">-- Select Interest Rate --</option>
-                        <option value="5">5%</option>
-                        <option value="7.5">7.5%</option>
-                        <option value="10">10%</option>
-                        <option value="12.5">12.5%</option>
-                        <option value="15">15%</option>
-                    </select>
-                </div>
-
-                <div class="mb-3">
                     <label for="tenure" class="form-label" style="color: white;">Tenure (months):</label>
                     <select name="tenure" id="tenure" class="form-select" required>
                         <option value="">-- Select Tenure --</option>
@@ -52,11 +40,17 @@
                 </div>
 
                 <div class="d-flex justify-content-between">
+                    <button type="button" id="show_interest_rate" class="btn btn-info">Show Interest Rate</button>
                     <button type="button" id="calculate_emi" class="btn btn-primary">Calculate EMI</button>
                     <button type="submit" class="btn btn-success">Submit Application</button>
                 </div>
             </form>
         </div>
+    </div>
+
+    <div id="interest_rate_result" class="mt-4" style="display:none;">
+        <h3 style="color: #004d40;">Interest Rate</h3>
+        <p id="interest_rate_output"></p>
     </div>
 
     <div id="emi_result" class="mt-4" style="display:none;">
@@ -66,13 +60,38 @@
 </div>
 
 <script>
+    // Function to determine interest rate based on tenure
+    function calculateInterestRate(tenure) {
+        if (tenure === 12) return 5;
+        if (tenure === 24) return 7.5;
+        if (tenure === 36) return 10;
+        if (tenure === 48) return 12.5;
+        if (tenure === 60) return 15;
+        return 0; // Default case if tenure is not recognized
+    }
+
+    // Show Interest Rate button functionality
+    document.getElementById('show_interest_rate').onclick = function() {
+        var tenure = parseInt(document.getElementById('tenure').value);
+        var interestRate = calculateInterestRate(tenure);
+
+        if (isNaN(tenure) || interestRate === 0) {
+            alert("Please select a valid tenure.");
+            return;
+        }
+
+        document.getElementById('interest_rate_output').innerText = "Your Interest Rate is: " + interestRate + "% per annum";
+        document.getElementById('interest_rate_result').style.display = "block";
+    };
+
+    // Calculate EMI button functionality
     document.getElementById('calculate_emi').onclick = function() {
         var loanAmount = parseFloat(document.getElementById('loan_amount').value);
-        var interestRate = parseFloat(document.getElementById('interest_rate').value) / 100 / 12;
         var tenure = parseInt(document.getElementById('tenure').value);
+        var interestRate = calculateInterestRate(tenure) / 100 / 12;
 
         if (isNaN(loanAmount) || isNaN(interestRate) || isNaN(tenure) || tenure <= 0) {
-            alert("Please enter valid inputs for loan amount, interest rate, and tenure.");
+            alert("Please enter valid inputs for loan amount and tenure.");
             return;
         }
 
