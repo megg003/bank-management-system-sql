@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Manage Loan Applications</h2>
+    <div class="card shadow-lg" style="border-radius: 10px;">
+        <div class="card-body">
+            <h5 class="card-title">Loan Applications</h5>
+            <p class="card-text">Here you can view and manage loan applications in the system.</p>
+
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>User ID</th>
+                        <th>Amount</th>
+                        <th>Interest Rate</th>
+                        <th>Tenure</th>
+                        <th>Documents</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td>{{ loan.loan_id }}</td>
+                        <td>{{ loan.user_id }}</td>
+                        <td>{{ loan.loan_amount }}</td>
+                        <td>{{ loan.interest_rate }}%</td>
+                        <td>{{ loan.tenure }} months</td>
+                        <td>
+                            {% if loan.documents %}
+                                {% for doc in loan.documents.split(',') %}
+                                    <a href="{{ url_for('uploaded_file', filename=doc) }}" target="_blank">Document</a><br>
+                                {% endfor %}
+                            {% else %}
+                                No documents available
+                            {% endif %}
+                        </td>
+                        <td>{{ loan.status }}</td>
+                        <td>
+                            {% if loan.status.strip() == 'PENDING' %}
+                            <!-- Display Approve and Deny buttons if the status is "Pending" -->
+                            <form action="{{ url_for('approve_loan', loan_id=loan.loan_id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            <form action="{{ url_for('deny_loan', loan_id=loan.loan_id) }}" method="post" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">Deny</button>
+                            </form>
+                        {% endif %}
+
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
