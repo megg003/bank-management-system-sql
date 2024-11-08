@@ -31,6 +31,28 @@
                     <strong>Status:</strong> {{ user.user_status.value }}
                 </li>
             </ul>
+
+            <h4 class="mt-4" style="color: white;">Loan Details</h4>
+            <table class="table table-bordered" style="color: white;">
+                <thead>
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>Loan Amount</th>
+                        <th>Status</th>
+                        <th>Interest Rate</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td>{{ loan.loan_id }}</td>
+                        <td>{{ loan.loan_amount }}</td>
+                        <td>{{ loan.status }}</td>
+                        <td>{{ loan.interest_rate }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
             {% else %}
             <div class="alert alert-danger">Account not found.</div>
             {% endif %}

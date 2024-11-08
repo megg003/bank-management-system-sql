@@ -19,7 +19,9 @@ nest_asyncio.apply()
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+UPLOAD_FOLDER = r'C:\Users\91984\Downloads\DBMSProject\uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -245,7 +247,11 @@ def account_details():
         flash('User not found.', 'danger')
         return redirect(url_for('login'))  # Redirect to login if user not found
     
-    return render_template('account_details.html', user=user)  # Pass user details to the template
+    # Fetch the loan details associated with the user
+    loans = Loan.query.filter_by(user_id=user_id).all()  # Fetch all loans for the logged-in user
+    
+    return render_template('account_details.html', user=user, loans=loans)  # Pass user and loans to the template
+
 
 @app.route('/update_user', methods=['GET', 'POST'])
 def update_user():
@@ -284,23 +290,28 @@ def deposit():
 def withdraw():
     return render_template('withdraw.html')
 
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Define allowed file extensions
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg'}
+
+# Function to check if the file extension is allowed
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Your loan route
 @app.route('/loan', methods=['GET', 'POST'])
 def loan():
     if request.method == 'POST':
-        # Get the logged-in user ID from the session
-        user_id = session.get('user_id')  
-        
-        # Check if the user is logged in
+        user_id = session.get('user_id')
         if not user_id:
             flash('You must be logged in to apply for a loan.', 'danger')
             return redirect(url_for('login'))
 
-        # Extract form data
         loan_amount = request.form['loan_amount']
         interest_rate = request.form['interest_rate']
         tenure = request.form['tenure']
 
-        # Handle file uploads
         if 'documents' not in request.files:
             flash('Please upload required documents.', 'danger')
             return redirect(request.url)
@@ -308,25 +319,33 @@ def loan():
         documents = request.files.getlist('documents')
         document_paths = []
 
-        # Save each document
         for document in documents:
             if document.filename == '':
                 flash('No document selected', 'danger')
                 continue
-            document_path = os.path.join(app.config['UPLOAD_FOLDER'], document.filename)
-            document.save(document_path)
-            document_paths.append(document_path)
+            # Ensure file type is allowed (optional)
+            if not allowed_file(document.filename):
+                flash('Invalid file type. Only PDF, DOCX, and JPG are allowed.', 'danger')
+                continue
+            # Save file with unique filename
+            document_filename = f"{str(uuid.uuid4())[:10]}_{document.filename}"
+            document_path = os.path.join(app.config['UPLOAD_FOLDER'], document_filename)
+            try:
+                document.save(document_path)
+                document_paths.append(document_path)
+            except Exception as e:
+                flash(f"An error occurred while uploading the document: {str(e)}", 'danger')
+                return redirect(request.url)
 
-        if not document_paths:  # If no documents were uploaded, flash an error
+        if not document_paths:
             flash('At least one document is required.', 'danger')
             return redirect(request.url)
 
         document_paths_str = ','.join(document_paths)
 
-        # Generate a unique tracking ID (UUID)
-        tracking_id = str(uuid.uuid4())[:10]  # First 10 characters of UUID
+        # Generate a unique tracking ID for the loan application
+        tracking_id = str(uuid.uuid4())[:10]
 
-        # Create a new Loan entry
         new_loan = Loan(
             user_id=user_id,
             loan_amount=loan_amount,
@@ -334,13 +353,13 @@ def loan():
             tenure=tenure,
             documents=document_paths_str,
             tracking_id=tracking_id,
-            status=LoanStatus.PENDING.value  # Use Enum's value
+            status=LoanStatus.PENDING.value
         )
 
         db.session.add(new_loan)
         db.session.commit()
 
-        # Redirect to the loan confirmation page with the tracking ID
+        flash('Your loan application has been submitted successfully.', 'success')
         return redirect(url_for('loan_confirmation', tracking_id=tracking_id))
 
     return render_template('loan.html')
