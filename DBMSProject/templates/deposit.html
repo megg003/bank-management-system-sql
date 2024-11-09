@@ -1,21 +1,59 @@
 {% extends "base.html" %}
+
 {% block content %}
 <div class="d-flex align-items-center justify-content-center" style="height: 80vh; background-color: #004d40;">
     <div class="p-5" style="background-color: #ffffff; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;">
         <h2 class="text-center mb-4" style="color: #004d40;">Deposit Money</h2>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="list-unstyled">
+                    {% for category, message in messages %}
+                        <li class="alert alert-{{ category }} mt-2">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        
         <form method="POST" action="/deposit">
             <div class="mb-3">
-                <label for="amount" class="form-label" style="color: #343a40;">Deposit Amount</label>
-                <input type="number" class="form-control" id="amount" name="amount" required style="border-color: #ffca28;">
+                <label for="account_id" class="form-label" style="color: #343a40;">Account Number</label>
+                <input type="text" class="form-control" id="account_id" name="account_id" required style="border-color: #ffca28;">
             </div>
             <div class="mb-3">
-                <label for="account" class="form-label" style="color: #343a40;">Account Number</label>
-                <input type="text" class="form-control" id="account" name="account" required style="border-color: #ffca28;">
+                <label for="principal_amount" class="form-label" style="color: #343a40;">Principal Amount</label>
+                <input type="number" step="0.01" class="form-control" id="principal_amount" name="principal_amount" required style="border-color: #ffca28;">
+            </div>
+            <div class="mb-3">
+                <label for="interest_rate" class="form-label" style="color: #343a40;">Interest Rate (%)</label>
+                <select class="form-select" id="interest_rate" name="interest_rate" required style="border-color: #ffca28;">
+                    <option value="5">5%</option>
+                    <option value="7.5">7.5%</option>
+                    <option value="10">10%</option>
+                    <option value="12.5">12.5%</option>
+                    <option value="15">15%</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="tenure" class="form-label" style="color: #343a40;">Tenure (Months)</label>
+                <select class="form-select" id="tenure" name="tenure" required style="border-color: #ffca28;">
+                    <option value="12">12</option>
+                    <option value="24">24</option>
+                    <option value="36">36</option>
+                    <option value="48">48</option>
+                    <option value="60">60</option>
+                </select>
             </div>
             <div class="d-grid">
                 <button type="submit" class="btn btn-primary" style="background-color: #004d40; border-color: #004d40;">Deposit</button>
             </div>
         </form>
+
+        {% if final_amount is not none %}
+            <div class="alert alert-success mt-4" role="alert">
+                <strong>Success!</strong> Your final amount after the deposit is: {{ '{:.2f}'.format(final_amount) }}.
+            </div>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
