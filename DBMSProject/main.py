@@ -288,9 +288,81 @@ def update_user():
     return render_template('update_user.html', user=user)
 
 
-@app.route('/deposit')
+class Deposit(db.Model):
+    __tablename__ = 'deposit'
+    
+    deposit_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+
+    account_id = db.Column(db.String(12), db.ForeignKey('User_Info.account_id'), nullable=False)
+    final_amount = db.Column(db.Numeric(18, 2), nullable=False)
+    interest_rate = db.Column(db.Numeric(5, 2), nullable=False)
+    principal_amount = db.Column(db.Numeric(18, 2), nullable=False)
+    tenure = db.Column(db.Integer, nullable=False)
+    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
+    modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationship with the UserInfo model (optional)
+    user = db.relationship('UserInfo', backref=db.backref('deposits', lazy=True))
+
+    def __repr__(self):
+        return f'<Deposit {self.deposit_ID} - Account ID {self.account_id}>'
+
+
+
+from decimal import Decimal, getcontext
+
+@app.route('/deposit', methods=['GET', 'POST'])
 def deposit():
-    return render_template('deposit.html')
+    user_id = session.get('user_id')
+    
+    if not user_id:
+        flash('You must be logged in to add a deposit.', 'danger')
+        return redirect(url_for('login'))
+    
+    final_amount = None  # Initialize final_amount to None
+    
+    if request.method == 'POST':
+        account_id = request.form['account_id']
+        
+        # Check if account_id already has an active deposit
+        existing_deposit = Deposit.query.filter_by(account_id=account_id).first()
+        
+        if existing_deposit:
+            flash(f"Account {account_id} already has an active deposit.", 'danger')
+            return redirect(url_for('deposit'))
+        
+        principal_amount = Decimal(request.form['principal_amount'])
+        
+        # Check if principal amount is greater than 0
+        if principal_amount <= 0:
+            flash('Principal amount must be greater than 0.', 'danger')
+            return redirect(url_for('deposit'))
+        
+        interest_rate = Decimal(request.form['interest_rate'])
+        tenure = int(request.form['tenure'])
+        
+        # Calculate the final amount using compound interest formula
+        final_amount = Decimal(principal_amount) * (1 + Decimal(interest_rate) / 100) ** (Decimal(tenure) / 12)
+
+        # Create a new Deposit entry with calculated final_amount
+        new_deposit = Deposit(
+            account_id=account_id,
+            final_amount=final_amount,
+            interest_rate=interest_rate,
+            principal_amount=principal_amount,
+            tenure=tenure
+        )
+        
+        db.session.add(new_deposit)
+        db.session.commit()
+        
+        # Flash a message with the final amount and print it to the console
+        flash(f'Deposit added successfully! Final amount after tenure: {final_amount:.2f}', 'success')
+        print(f"The calculated final amount is: {final_amount:.2f}")
+        
+        return redirect(url_for('deposit'))
+
+    return render_template('deposit.html', final_amount=final_amount)
 
 @app.route('/withdraw')
 def withdraw():
