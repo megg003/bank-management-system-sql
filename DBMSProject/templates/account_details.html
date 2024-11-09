@@ -32,6 +32,7 @@
                 </li>
             </ul>
 
+            <!-- Loan Details Section -->
             <h4 class="mt-4" style="color: white;">Loan Details</h4>
             <table class="table table-bordered" style="color: white;">
                 <thead>
@@ -57,6 +58,33 @@
                                 <span class="text-muted">N/A</span>
                             {% endif %}
                         </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Deposit Details Section -->
+            <h4 class="mt-4" style="color: white;">Deposit Details</h4>
+            <table class="table table-bordered" style="color: white;">
+                <thead>
+                    <tr>
+                        <th>Deposit ID</th>
+                        <th>Principal Amount</th>
+                        <th>Interest Rate</th>
+                        <th>Tenure (Months)</th>
+                        <th>Final Amount</th>
+                        <th>Created At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for deposit in deposits %}
+                    <tr>
+                        <td>{{ deposit.deposit_ID }}</td>
+                        <td>{{ deposit.principal_amount }}</td>
+                        <td>{{ deposit.interest_rate }}</td>
+                        <td>{{ deposit.tenure }}</td>
+                        <td>{{ deposit.final_amount }}</td>
+                        <td>{{ deposit.created_at.strftime('%Y-%m-%d') }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

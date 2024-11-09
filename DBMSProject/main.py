@@ -241,7 +241,8 @@ def account_details():
         flash('You must be logged in to view account details.', 'danger')
         return redirect(url_for('login'))  # Redirect to login if not logged in
     
-    user = UserInfo.query.get(user_id)  # Retrieve user details from the database
+    # Retrieve user details from the database
+    user = UserInfo.query.get(user_id)
     
     if not user:
         flash('User not found.', 'danger')
@@ -249,8 +250,12 @@ def account_details():
     
     # Fetch the loan details associated with the user
     loans = Loan.query.filter_by(user_id=user_id).all()  # Fetch all loans for the logged-in user
+
+    # Fetch the deposit details associated with the user
+    deposits = Deposit.query.filter_by(account_id=user.account_id).all()  # Fetch all deposits for the logged-in user
     
-    return render_template('account_details.html', user=user, loans=loans)  # Pass user and loans to the template
+    return render_template('account_details.html', user=user, loans=loans, deposits=deposits)  # Pass user, loans, and deposits to the template
+
 
 @app.route('/pay_emi/<int:loan_id>', methods=['POST', 'GET'])
 def pay_emi(loan_id):
