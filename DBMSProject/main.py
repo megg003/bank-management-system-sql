@@ -11,13 +11,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 import jwt
 from datetime import datetime, timedelta
+from decimal import Decimal
+from sqlalchemy import Numeric
 
 # Apply nest_asyncio to avoid event loop issues
 nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
 UPLOAD_FOLDER = r'C:\Users\91984\Downloads\DBMSProject\uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -61,7 +63,19 @@ class UserInfo(db.Model):
     phone_number = db.Column(db.String(15))
     access_type = db.Column(db.String(20))
     user_status = db.Column(db.Enum(UserStatus), default=UserStatus.ACTIVE.value)
+    atm_pin = db.Column(db.String(255))  # Encrypted 4-digit PINs
+    balance = db.Column(Numeric(10, 2), default=Decimal('0.00'))
+    
+class Transactions(db.Model):
+    __tablename__ = 'transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'), nullable=False)
+    transaction_type = db.Column(db.String(50), nullable=False)  # 'deposit' or 'withdraw'
+    amount = db.Column(db.Numeric(10, 2), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+    user = db.relationship('UserInfo', backref='transactions')
 class LoanStatus(Enum):
     APPROVED = 'approved'
     PENDING = 'pending'
@@ -233,6 +247,75 @@ def register():
 
     return render_template('register.html')
 
+
+from werkzeug.security import generate_password_hash, check_password_hash
+
+@app.route('/atm', methods=['GET', 'POST'])
+def atm():
+    user_id = session.get('user_id')  # Get the logged-in user's user_id from the session
+    if not user_id:
+        flash('You must be logged in to access the ATM page.', 'danger')
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    user = UserInfo.query.filter_by(user_id=user_id).first()  # Get user info
+    
+    if user.atm_pin is None:
+        # If no ATM PIN is set, show the option to create one
+        if request.method == 'POST':
+            pin = request.form.get('atm_pin')
+            if len(pin) == 4 and pin.isdigit():
+                user.atm_pin = generate_password_hash(pin)  # Encrypt the PIN
+                db.session.commit()
+                flash("ATM PIN set successfully!", 'success')
+                return redirect(url_for('atm'))  # Redirect to ATM page after setting PIN
+            else:
+                flash("Please enter a valid 4-digit PIN.", 'danger')
+        
+        return render_template('atm.html', user=user, create_pin=True)
+    
+    # If ATM PIN is set, allow user to perform ATM actions
+    if request.method == 'POST':
+        entered_pin = request.form.get('entered_pin')
+        if check_password_hash(user.atm_pin, entered_pin):  # Validate entered PIN
+            action = request.form.get('action')
+            amount = request.form.get('amount', 0)
+
+            # Convert the amount to a decimal to prevent type issues
+            amount = Decimal(amount)  # Convert amount to Decimal
+
+            if action == 'savings' and amount > 0:
+                # Deposit action
+                user.balance += amount  # Add amount to balance
+                new_transaction = Transactions(
+                    user_id=user.user_id,
+                    transaction_type='deposit',
+                    amount=amount
+                )
+                db.session.add(new_transaction)
+                db.session.commit()
+                flash(f"${amount} added to your savings account.", 'success')
+                return redirect(url_for('atm'))  # Redirect to ATM page
+
+            elif action == 'withdraw' and amount > 0:
+                # Withdraw action with balance check
+                if amount <= user.balance:
+                    user.balance -= amount  # Subtract amount from balance
+                    new_transaction = Transactions(
+                        user_id=user.user_id,
+                        transaction_type='withdraw',
+                        amount=amount
+                    )
+                    db.session.add(new_transaction)
+                    db.session.commit()
+                    flash(f"${amount} withdrawn from your account.", 'success')
+                    return redirect(url_for('atm'))  # Redirect to ATM page
+                else:
+                    flash("Insufficient balance.", 'danger')
+        else:
+            flash("Incorrect PIN.", 'danger')
+
+    return render_template('atm.html', user=user, create_pin=False)
+
 @app.route('/account_details')
 def account_details():
     user_id = session.get('user_id')  # Get the logged-in user's ID from the session
@@ -254,7 +337,11 @@ def account_details():
     # Fetch the deposit details associated with the user
     deposits = Deposit.query.filter_by(account_id=user.account_id).all()  # Fetch all deposits for the logged-in user
     
-    return render_template('account_details.html', user=user, loans=loans, deposits=deposits)  # Pass user, loans, and deposits to the template
+    # Pass the user and transactions to the template
+    transactions = Transactions.query.filter_by(user_id=user_id).all()  # Fetch all transactions for the logged-in user
+    
+    return render_template('account_details.html', user=user, loans=loans, deposits=deposits, transactions=transactions)
+
 
 
 @app.route('/pay_emi/<int:loan_id>', methods=['POST', 'GET'])
