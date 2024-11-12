@@ -13,17 +13,17 @@ import jwt
 from datetime import datetime, timedelta
 from decimal import Decimal
 from sqlalchemy import Numeric
+from decimal import Decimal, getcontext
 
 # Apply nest_asyncio to avoid event loop issues
 nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Meerareji%40891@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-UPLOAD_FOLDER = r'C:\Users\91984\Downloads\DBMSProject\uploads'
+UPLOAD_FOLDER = r'"C:\Users\Rejijose\DBMSProject\uploads"'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 
 # Configure Flask-Mail
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -65,6 +65,7 @@ class UserInfo(db.Model):
     user_status = db.Column(db.Enum(UserStatus), default=UserStatus.ACTIVE.value)
     atm_pin = db.Column(db.String(255))  # Encrypted 4-digit PINs
     balance = db.Column(Numeric(10, 2), default=Decimal('0.00'))
+  
     
 class Transactions(db.Model):
     __tablename__ = 'transactions'
@@ -410,6 +411,8 @@ def pay_emi(loan_id):
     # Redirect to account details page with the transactions
     return render_template('account_details.html', user=user, loans=loans, transactions=transactions.items)
 
+
+
 @app.route('/update_user', methods=['GET', 'POST'])
 def update_user():
     user_id = session.get('user_id')  # Get the logged-in user's ID from the session
@@ -441,26 +444,33 @@ def update_user():
 
 class Deposit(db.Model):
     __tablename__ = 'deposit'
-    
-    deposit_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)
 
-    account_id = db.Column(db.String(12), db.ForeignKey('User_Info.account_id'), nullable=False)
-    final_amount = db.Column(db.Numeric(18, 2), nullable=False)
-    interest_rate = db.Column(db.Numeric(5, 2), nullable=False)
-    principal_amount = db.Column(db.Numeric(18, 2), nullable=False)
-    tenure = db.Column(db.Integer, nullable=False)
-    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
-    modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
-    # Relationship with the UserInfo model (optional)
-    user = db.relationship('UserInfo', backref=db.backref('deposits', lazy=True))
+    deposit_ID = db.Column(db.Integer, primary_key=True, autoincrement=True)  # Primary Key
+    account_id = db.Column(db.String(12), nullable=False, unique=True)  # Unique account_id
+    final_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Final deposit amount
+    interest_rate = db.Column(db.Numeric(5, 2), nullable=False)  # Interest rate
+    principal_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Principal amount
+    tenure = db.Column(db.Integer, nullable=False)  # Tenure
+    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)  # Timestamp of creation
+    modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)  # Timestamp for updates
+
+    # Foreign key to user_info table
+    user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'))
+    # Relationship to UserInfo table (optional, if you want easy access from Deposit to UserInfo)
+    user = db.relationship('UserInfo', backref='deposits', lazy=True)
 
     def __repr__(self):
         return f'<Deposit {self.deposit_ID} - Account ID {self.account_id}>'
 
+# Function to generate unique account IDs
+import random
+import string
 
+def generate_account_id():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
 
-from decimal import Decimal, getcontext
+# Flask route to handle deposit
+from flask import render_template, request, redirect, url_for, flash, session
 
 @app.route('/deposit', methods=['GET', 'POST'])
 def deposit():
@@ -473,9 +483,9 @@ def deposit():
     final_amount = None  # Initialize final_amount to None
     
     if request.method == 'POST':
-        account_id = request.form['account_id']
+        account_id = generate_account_id()  # Generate new account ID for deposit
         
-        # Check if account_id already has an active deposit
+        # Check if account_id already has an active deposit (unique check)
         existing_deposit = Deposit.query.filter_by(account_id=account_id).first()
         
         if existing_deposit:
@@ -484,37 +494,38 @@ def deposit():
         
         principal_amount = Decimal(request.form['principal_amount'])
         
-        # Check if principal amount is greater than 0
-        if principal_amount <= 0:
-            flash('Principal amount must be greater than 0.', 'danger')
+        # Minimum deposit check
+        if principal_amount < 1000:
+            flash('The minimum deposit amount is 1000.', 'danger')
             return redirect(url_for('deposit'))
         
-        interest_rate = Decimal(request.form['interest_rate'])
-        tenure = int(request.form['tenure'])
+        # Convert interest_rate and tenure to Decimal
+        interest_rate = Decimal(request.form['interest_rate'])  # Ensure interest_rate is Decimal
+        tenure = Decimal(request.form['tenure'])  # Ensure tenure is Decimal
         
         # Calculate the final amount using compound interest formula
-        final_amount = Decimal(principal_amount) * (1 + Decimal(interest_rate) / 100) ** (Decimal(tenure) / 12)
-
-        # Create a new Deposit entry with calculated final_amount
+        final_amount = principal_amount * (1 + interest_rate / 100) ** (tenure / 12)
+        
+        # Create the Deposit entry
         new_deposit = Deposit(
             account_id=account_id,
             final_amount=final_amount,
             interest_rate=interest_rate,
             principal_amount=principal_amount,
-            tenure=tenure
+            tenure=tenure,
+            user_id=user_id  # Use the logged-in user's user_id
         )
         
+        # Add the deposit record to the database
         db.session.add(new_deposit)
         db.session.commit()
-        
-        # Flash a message with the final amount and print it to the console
+
         flash(f'Deposit added successfully! Final amount after tenure: {final_amount:.2f}', 'success')
         print(f"The calculated final amount is: {final_amount:.2f}")
         
         return redirect(url_for('deposit'))
 
     return render_template('deposit.html', final_amount=final_amount)
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Define allowed file extensions
