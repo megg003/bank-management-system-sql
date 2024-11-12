@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">ATM</h2>
+
+    <!-- Display Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="alert-container">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mt-3">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- ATM actions form -->
+    <form method="POST">
+        {% if create_pin %}
+            <h4>Create ATM Pin</h4>
+            <input type="password" name="atm_pin" maxlength="4" placeholder="Enter 4-digit PIN" class="form-control" required>
+            <button type="submit" class="btn btn-primary mt-3">Set ATM PIN</button>
+        {% else %}
+            <h4>Enter ATM PIN</h4>
+            <input type="password" name="entered_pin" maxlength="4" placeholder="Enter your ATM PIN" class="form-control" required>
+            <div class="mt-3">
+                <label for="action">Select Action:</label>
+                <select name="action" class="form-control" required>
+                    <option value="withdraw">Withdraw</option>
+                    <option value="savings">Deposit to Savings</option>
+                </select>
+            </div>
+            <div class="mt-3">
+                <label for="amount">Amount:</label>
+                <input type="number" name="amount" min="1" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary mt-3">Submit</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
