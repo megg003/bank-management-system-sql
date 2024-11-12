@@ -44,6 +44,8 @@
                         <th>Loan Amount</th>
                         <th>Status</th>
                         <th>Interest Rate</th>
+                        <th>EMI</th>
+                        <th>Amount Due</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -54,8 +56,10 @@
                         <td>{{ loan.loan_amount }}</td>
                         <td>{{ loan.status }}</td>
                         <td>{{ loan.interest_rate }}</td>
+                        <td>{{ loan.emi }}</td>
+                        <td>{{ loan.amount_due }}</td>
                         <td>
-                            {% if loan.status == 'APPROVED' %}
+                            {% if loan.status == 'APPROVED' and user.balance >= loan.emi %}
                                 <a href="{{ url_for('pay_emi', loan_id=loan.loan_id) }}" class="btn btn-success btn-sm">Pay EMI</a>
                             {% else %}
                                 <span class="text-muted">N/A</span>
@@ -86,6 +90,17 @@
                     {% endfor %}
                 </tbody>
             </table>
+
+            <!-- Pagination Controls -->
+            <div class="text-center">
+                {% if transactions.has_prev %}
+                    <a href="{{ url_for('account_details', page=transactions.prev_num) }}" class="btn btn-secondary btn-sm">Previous</a>
+                {% endif %}
+                <span>Page {{ transactions.page }} of {{ transactions.pages }}</span>
+                {% if transactions.has_next %}
+                    <a href="{{ url_for('account_details', page=transactions.next_num) }}" class="btn btn-secondary btn-sm">Next</a>
+                {% endif %}
+            </div>
 
             <!-- Deposit Details Section -->
             <h4 class="mt-4" style="color: white;">Deposit Details</h4>
@@ -126,4 +141,3 @@
     </div>
 </div>
 {% endblock %}
-

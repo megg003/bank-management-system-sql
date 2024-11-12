@@ -19,7 +19,7 @@ nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
 UPLOAD_FOLDER = r'C:\Users\91984\Downloads\DBMSProject\uploads'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -71,7 +71,7 @@ class Transactions(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'), nullable=False)
-    transaction_type = db.Column(db.String(50), nullable=False)  # 'deposit' or 'withdraw'
+    transaction_type = db.Column(db.String(100), nullable=False)  # 'deposit' or 'withdraw'
     amount = db.Column(db.Numeric(10, 2), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
@@ -93,6 +93,9 @@ class Loan(db.Model):
     created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
     modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
     tracking_id = db.Column(db.String(36), unique=True, nullable=False)  # New field for tracking ID
+    emi = db.Column(db.Numeric(10, 2), nullable=True)  # Monthly installment amount
+    amount_due = db.Column(db.Numeric(10, 2), nullable=True)  # Total outstanding amount
+
 
 @app.route('/')
 def homepage():
@@ -337,19 +340,75 @@ def account_details():
     # Fetch the deposit details associated with the user
     deposits = Deposit.query.filter_by(account_id=user.account_id).all()  # Fetch all deposits for the logged-in user
     
-    # Pass the user and transactions to the template
-    transactions = Transactions.query.filter_by(user_id=user_id).all()  # Fetch all transactions for the logged-in user
+    # Implement pagination for transaction history (10 per page)
+    page = request.args.get('page', 1, type=int)
+    transactions = Transactions.query.filter_by(user_id=user_id).paginate(page=page, per_page=10, error_out=False)
     
     return render_template('account_details.html', user=user, loans=loans, deposits=deposits, transactions=transactions)
 
 
-
+from flask import request
 @app.route('/pay_emi/<int:loan_id>', methods=['POST', 'GET'])
 def pay_emi(loan_id):
-    # Logic for processing EMI payment for the loan with the specified loan_id
-    # For example, deduct from user’s balance, update loan payment history, etc.
-    # Redirect to account details page after payment
-    return redirect(url_for('account_details'))
+    # Get the logged-in user's ID from session
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('You must be logged in to pay EMI.', 'danger')
+        return redirect(url_for('login'))  # Redirect to login if not logged in
+
+    # Retrieve user and loan details
+    user = UserInfo.query.get(user_id)
+    loan = Loan.query.get(loan_id)
+
+    if not user or not loan:
+        flash('Loan or user not found.', 'danger')
+        return redirect(url_for('account_details'))  # Redirect to account details if not found
+
+    # Ensure the loan is approved and there is an outstanding amount
+    if loan.status != 'APPROVED' or loan.amount_due <= 0:
+        flash('No pending EMI for this loan.', 'danger')
+        return redirect(url_for('account_details'))  # Redirect if the loan is not approved or no amount due
+
+    # Check if the user has enough balance to pay the EMI
+    if user.balance < loan.emi:
+        flash('Insufficient balance to pay EMI.', 'danger')
+        return redirect(url_for('account_details'))  # Redirect if insufficient balance
+
+    # Deduct the EMI from user's balance
+    user.balance -= loan.emi
+    # Deduct the EMI from the loan's amount due
+    loan.amount_due -= loan.emi
+
+    try:
+        # Save the changes to the database
+        db.session.commit()
+
+        # Create a new transaction record for EMI payment
+        transaction = Transactions(
+            user_id=user_id,
+            transaction_type='Pay EMI',
+            amount=loan.emi,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        flash('EMI paid successfully!', 'success')
+
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of any errors
+        flash(f'Error occurred while processing payment: {e}', 'danger')
+        print(f"Error: {e}")
+
+    # Implement pagination for transaction history (10 per page)
+    page = request.args.get('page', 1, type=int)
+    transactions = Transactions.query.filter_by(user_id=user_id).paginate(page=page, per_page=10, error_out=False)
+
+    # Fetch all loans for the logged-in user
+    loans = Loan.query.filter_by(user_id=user_id).all()
+
+    # Redirect to account details page with the transactions
+    return render_template('account_details.html', user=user, loans=loans, transactions=transactions.items)
 
 @app.route('/update_user', methods=['GET', 'POST'])
 def update_user():
@@ -456,10 +515,6 @@ def deposit():
 
     return render_template('deposit.html', final_amount=final_amount)
 
-@app.route('/withdraw')
-def withdraw():
-    return render_template('withdraw.html')
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Define allowed file extensions
@@ -469,7 +524,6 @@ ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# Your loan route
 @app.route('/loan', methods=['GET', 'POST'])
 def loan():
     if request.method == 'POST':
@@ -478,9 +532,28 @@ def loan():
             flash('You must be logged in to apply for a loan.', 'danger')
             return redirect(url_for('login'))
 
-        loan_amount = request.form['loan_amount']
-        interest_rate = request.form['interest_rate']
-        tenure = request.form['tenure']
+        loan_amount = float(request.form['loan_amount'])
+        tenure = int(request.form['tenure'])
+        
+        # Calculate interest rate based on tenure
+        def calculate_interest_rate(tenure):
+            if tenure == 12:
+                return 5
+            elif tenure == 24:
+                return 7.5
+            elif tenure == 36:
+                return 10
+            elif tenure == 48:
+                return 12.5
+            elif tenure == 60:
+                return 15
+            return 0
+        
+        interest_rate = calculate_interest_rate(tenure)
+        
+        # Calculate EMI based on formula
+        monthly_rate = (interest_rate / 100) / 12
+        emi = (loan_amount * monthly_rate * (1 + monthly_rate) ** tenure) / ((1 + monthly_rate) ** tenure - 1)
 
         if 'documents' not in request.files:
             flash('Please upload required documents.', 'danger')
@@ -516,6 +589,7 @@ def loan():
         # Generate a unique tracking ID for the loan application
         tracking_id = str(uuid.uuid4())[:10]
 
+        # Create the loan with calculated EMI and initial amount_due as loan_amount
         new_loan = Loan(
             user_id=user_id,
             loan_amount=loan_amount,
@@ -523,7 +597,9 @@ def loan():
             tenure=tenure,
             documents=document_paths_str,
             tracking_id=tracking_id,
-            status=LoanStatus.PENDING.value
+            status=LoanStatus.PENDING.value,
+            emi=emi,
+            amount_due=loan_amount  # Initialize amount_due with the loan amount
         )
 
         db.session.add(new_loan)
