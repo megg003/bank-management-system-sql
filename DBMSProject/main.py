@@ -373,31 +373,11 @@ def delete_account():
     if not check_password_hash(user.password, password):
         flash("Incorrect password. Please try again.", "danger")
         return redirect(url_for('account_details'))  # Redirect to account details page
-    
-    # Simulate trigger logic - check the conditions before account deletion
-    # Check if the user has any approved loans
-    pending_loans = Loan.query.filter_by(user_id=user.user_id, status='approved').all()
-    
-    if pending_loans:
-        flash("You cannot delete your account because you have pending loans.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
 
-    # Check if the user has any deposits
-    user_deposits = Deposit.query.filter_by(account_id=user.account_id).all()
-    
-    if user_deposits:
-        flash("You cannot delete your account because you have deposits.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-    # Check if the user balance is 0
-    if user.balance != 0:
-        flash("You cannot delete your account because your balance is not zero.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-    # If all conditions are met, proceed with the account deletion
+    # Attempt to delete the user account, relying on the database trigger for validation
     try:
-        db.session.delete(user)  # Delete the user account
-        db.session.commit()
+        db.session.delete(user)  # Attempt to delete the user account
+        db.session.commit()  # Commit the transaction
         
         # Send email notification after successful deletion
         send_deletion_email(user)
@@ -405,8 +385,8 @@ def delete_account():
         flash("Your account has been deleted successfully.", "success")
         return redirect(url_for('homepage'))  # Redirect to the homepage after deletion
     except Exception as e:
-        db.session.rollback()  # Rollback in case of any error
-        flash("An error occurred while processing your account deletion. Please try again.", "danger")
+        db.session.rollback()  # Rollback in case of any error (trigger error)
+        flash(str(e), "danger")  # Display the error message from the trigger
         return redirect(url_for('account_details'))  # Redirect to account details page
 
 def send_deletion_email(user):
