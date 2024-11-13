@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container my-5">
+    <h2 class="text-center mb-4" style="color: #004d40;">Transaction History</h2>
+    <div class="card shadow-lg" style="border-radius: 10px;">
+        <div class="card-body">
+            <h5 class="card-title">Transactions</h5>
+            
+            <!-- Transactions Table -->
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>User ID</th>
+                        <th>Amount</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in transactions.items %}
+                    <tr>
+                        <td>{{ transaction.id }}</td>
+                        <td>{{ transaction.user_id }}</td>
+                        <td>{{ transaction.amount }}</td>
+                        <td>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ transaction.transaction_type }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Pagination controls -->
+            <div class="d-flex justify-content-between mt-3">
+                {% if transactions.has_prev %}
+                    <a href="{{ url_for('view_transactions', page=transactions.prev_num) }}" class="btn btn-secondary">&laquo; Previous</a>
+                {% endif %}
+                <span>Page {{ transactions.page }} of {{ transactions.pages }}</span>
+                {% if transactions.has_next %}
+                    <a href="{{ url_for('view_transactions', page=transactions.next_num) }}" class="btn btn-secondary">Next &raquo;</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

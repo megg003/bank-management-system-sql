@@ -657,18 +657,23 @@ def manage_users():
     users = UserInfo.query.all()  # Fetch all users
     return render_template('manage_users.html', users=users)
 
-@app.route('/admin/transactions')
+@app.route('/admin/view_transactions')
 def view_transactions():
     user_id = session.get('user_id')
     user = UserInfo.query.get(user_id)
 
+    # Check if the user is an admin
     if not user or user.access_type.lower() != 'admin':
         flash('Unauthorized access.', 'danger')
         return redirect(url_for('homepage'))
 
-    # Fetch recent transactions or all transactions
-    transactions = Transaction.query.order_by(Transaction.date.desc()).all()
-    return render_template('transactions.html', transactions=transactions)
+    # Paginate transactions, showing 10 per page by default
+    page = request.args.get('page', 1, type=int)
+    transactions = Transactions.query.order_by(Transactions.timestamp.desc()).paginate(page=page, per_page=10, error_out=False)
+
+    # Render the transactions with pagination support
+    return render_template('view_transactions.html', transactions=transactions)
+
 
 @app.route('/admin/loans')
 def manage_loans():
