@@ -635,24 +635,30 @@ def allowed_file(filename):
 
 @app.route('/close_deposit/<int:deposit_id>', methods=['POST'])
 def close_deposit(deposit_id):
-    user_id = session.get('user_id')  # Get the logged-in user's ID
-    if not user_id:
-        flash('You must be logged in to close a deposit.', 'danger')
-        return redirect(url_for('login'))
-
-    # Find the deposit and ensure it belongs to the current user
-    deposit = Deposit.query.filter_by(deposit_ID=deposit_id, user_id=user_id).first()
-
-    if deposit and deposit.status != 'closed':
-        # Mark the deposit as closed
-        deposit.status = 'closed'
-        db.session.commit()  # Commit the change to trigger the SQL trigger
-
-        flash(f"Deposit ID {deposit_id} has been closed. The final amount will be transferred to your savings account.", 'success')
+    # Get the deposit record to retrieve the amount
+    deposit = Deposit.query.get(deposit_id)
+    
+    if deposit:
+        # Get the user associated with the deposit
+        user = UserInfo.query.get(deposit.user_id)
+        
+        if user:
+            # Update the user's balance
+            user.balance += deposit.final_amount
+            
+            # Mark the deposit as closed (optional)
+            deposit.status = 'closed'
+            
+            db.session.commit()  # Commit the changes to the database
+            
+            flash('Deposit closed successfully and balance updated!', 'success')
+        else:
+            flash('User not found.', 'error')
     else:
-        flash("Deposit not found or already closed.", 'danger')
+        flash('Deposit not found.', 'error')
 
-    return redirect(url_for('account_details'))
+    return redirect(url_for('account_details', user_id=deposit.user_id))
+
 
 @app.route('/loan', methods=['GET', 'POST'])
 def loan():
