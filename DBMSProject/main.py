@@ -21,9 +21,9 @@ nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-UPLOAD_FOLDER = r"C:\Users\91984\Downloads\DBMSProject\uploads"
+UPLOAD_FOLDER = r"C:\DBMS\DBMSProject\uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Configure Flask-Mail
@@ -551,7 +551,7 @@ class Deposit(db.Model):
     tenure = db.Column(db.Integer, nullable=False)  # Tenure
     created_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST))  # Timestamp of creation
     modified_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST), onupdate=lambda: datetime.now(IST))  # Timestamp for updates
-
+    status = db.Column(db.String(20))
     # Foreign key to user_info table
     user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'))
     # Relationship to UserInfo table (optional, if you want easy access from Deposit to UserInfo)
@@ -632,6 +632,27 @@ ALLOWED_EXTENSIONS = {'pdf', 'docx', 'jpg', 'jpeg'}
 # Function to check if the file extension is allowed
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/close_deposit/<int:deposit_id>', methods=['POST'])
+def close_deposit(deposit_id):
+    user_id = session.get('user_id')  # Get the logged-in user's ID
+    if not user_id:
+        flash('You must be logged in to close a deposit.', 'danger')
+        return redirect(url_for('login'))
+
+    # Find the deposit and ensure it belongs to the current user
+    deposit = Deposit.query.filter_by(deposit_ID=deposit_id, user_id=user_id).first()
+
+    if deposit and deposit.status != 'closed':
+        # Mark the deposit as closed
+        deposit.status = 'closed'
+        db.session.commit()  # Commit the change to trigger the SQL trigger
+
+        flash(f"Deposit ID {deposit_id} has been closed. The final amount will be transferred to your savings account.", 'success')
+    else:
+        flash("Deposit not found or already closed.", 'danger')
+
+    return redirect(url_for('account_details'))
 
 @app.route('/loan', methods=['GET', 'POST'])
 def loan():
