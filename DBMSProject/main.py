@@ -10,7 +10,7 @@ import string
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_mail import Mail, Message
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from sqlalchemy import Numeric
 from decimal import Decimal, getcontext
@@ -33,6 +33,9 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'meghanaaithal1863@gmail.com'  # Replace with your actual Gmail address
 app.config['MAIL_PASSWORD'] = 'dgqb fvti raic qnco'  # Replace with the app password you generated
 app.config['MAIL_DEFAULT_SENDER'] = 'meghanaaithal1863@gmail.com'  # Set your email here
+
+IST_OFFSET = timedelta(hours=5, minutes=30)
+IST = timezone(IST_OFFSET)
 
 mail = Mail(app)
 
@@ -74,7 +77,7 @@ class Transactions(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'), nullable=False)
     transaction_type = db.Column(db.String(100), nullable=False)  # 'deposit' or 'withdraw'
     amount = db.Column(db.Numeric(10, 2), nullable=False)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(IST))
 
     user = db.relationship('UserInfo', backref='transactions')
 class LoanStatus(Enum):
@@ -91,8 +94,8 @@ class Loan(db.Model):
     tenure = db.Column(db.Integer)
     documents = db.Column(db.String(255))
     status = db.Column(db.String(20), nullable=False, default='pending')  # 'pending' as default
-    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)
-    modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST))
+    modified_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST), onupdate=lambda: datetime.now(IST))
     tracking_id = db.Column(db.String(36), unique=True, nullable=False)  # New field for tracking ID
     emi = db.Column(db.Numeric(10, 2), nullable=True)  # Monthly installment amount
     amount_due = db.Column(db.Numeric(10, 2), nullable=True)  # Total outstanding amount
@@ -343,7 +346,10 @@ def account_details():
     
     # Implement pagination for transaction history (10 per page)
     page = request.args.get('page', 1, type=int)
-    transactions = Transactions.query.filter_by(user_id=user_id).paginate(page=page, per_page=10, error_out=False)
+    transactions = Transactions.query.filter_by(user_id=user_id) \
+        .order_by(Transactions.timestamp.desc()) \
+        .paginate(page=page, per_page=10, error_out=False)
+
     
     return render_template('account_details.html', user=user, loans=loans, deposits=deposits, transactions=transactions)
 
@@ -451,8 +457,8 @@ class Deposit(db.Model):
     interest_rate = db.Column(db.Numeric(5, 2), nullable=False)  # Interest rate
     principal_amount = db.Column(db.Numeric(18, 2), nullable=False)  # Principal amount
     tenure = db.Column(db.Integer, nullable=False)  # Tenure
-    created_at = db.Column(db.TIMESTAMP, default=datetime.utcnow)  # Timestamp of creation
-    modified_at = db.Column(db.TIMESTAMP, default=datetime.utcnow, onupdate=datetime.utcnow)  # Timestamp for updates
+    created_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST))  # Timestamp of creation
+    modified_at = db.Column(db.TIMESTAMP, default=lambda: datetime.now(IST), onupdate=lambda: datetime.now(IST))  # Timestamp for updates
 
     # Foreign key to user_info table
     user_id = db.Column(db.Integer, db.ForeignKey('User_Info.user_id'))
