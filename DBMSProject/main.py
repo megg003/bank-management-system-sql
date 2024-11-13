@@ -20,9 +20,9 @@ nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:Meerareji%40891@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-UPLOAD_FOLDER = r'"C:\Users\Rejijose\DBMSProject\uploads"'
+UPLOAD_FOLDER = r"C:\Users\91984\Downloads\DBMSProject\uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Configure Flask-Mail
@@ -543,81 +543,79 @@ def loan():
             flash('You must be logged in to apply for a loan.', 'danger')
             return redirect(url_for('login'))
 
-        loan_amount = float(request.form['loan_amount'])
-        tenure = int(request.form['tenure'])
-        
-        # Calculate interest rate based on tenure
-        def calculate_interest_rate(tenure):
-            if tenure == 12:
-                return 5
-            elif tenure == 24:
-                return 7.5
-            elif tenure == 36:
-                return 10
-            elif tenure == 48:
-                return 12.5
-            elif tenure == 60:
-                return 15
-            return 0
-        
-        interest_rate = calculate_interest_rate(tenure)
-        
-        # Calculate EMI based on formula
-        monthly_rate = (interest_rate / 100) / 12
-        emi = (loan_amount * monthly_rate * (1 + monthly_rate) ** tenure) / ((1 + monthly_rate) ** tenure - 1)
+        try:
+            loan_amount = float(request.form['loan_amount'])
+            tenure = int(request.form['tenure'])
 
-        if 'documents' not in request.files:
-            flash('Please upload required documents.', 'danger')
-            return redirect(request.url)
+            # Calculate interest rate based on tenure
+            def calculate_interest_rate(tenure):
+                if tenure == 12:
+                    return 5
+                elif tenure == 24:
+                    return 7.5
+                elif tenure == 36:
+                    return 10
+                elif tenure == 48:
+                    return 12.5
+                elif tenure == 60:
+                    return 15
+                return 0
+            
+            interest_rate = calculate_interest_rate(tenure)
 
-        documents = request.files.getlist('documents')
-        document_paths = []
+            # Calculate EMI
+            monthly_rate = (interest_rate / 100) / 12
+            emi = (loan_amount * monthly_rate * (1 + monthly_rate) ** tenure) / ((1 + monthly_rate) ** tenure - 1)
 
-        for document in documents:
-            if document.filename == '':
-                flash('No document selected', 'danger')
-                continue
-            # Ensure file type is allowed (optional)
-            if not allowed_file(document.filename):
-                flash('Invalid file type. Only PDF, DOCX, and JPG are allowed.', 'danger')
-                continue
-            # Save file with unique filename
-            document_filename = f"{str(uuid.uuid4())[:10]}_{document.filename}"
-            document_path = os.path.join(app.config['UPLOAD_FOLDER'], document_filename)
-            try:
-                document.save(document_path)
-                document_paths.append(document_path)
-            except Exception as e:
-                flash(f"An error occurred while uploading the document: {str(e)}", 'danger')
+            if 'documents' not in request.files:
+                flash('Please upload required documents.', 'danger')
                 return redirect(request.url)
 
-        if not document_paths:
-            flash('At least one document is required.', 'danger')
+            # Handle file upload and path generation
+            documents = request.files.getlist('documents')
+            document_paths = []
+            for document in documents:
+                if document.filename == '':
+                    flash('No document selected', 'danger')
+                    continue
+                if not allowed_file(document.filename):
+                    flash('Invalid file type. Only PDF, DOCX, and JPG are allowed.', 'danger')
+                    continue
+                document_filename = f"{str(uuid.uuid4())[:10]}_{document.filename}"
+                document_path = os.path.join(app.config['UPLOAD_FOLDER'], document_filename)
+                document.save(document_path)
+                document_paths.append(document_path)
+
+            if not document_paths:
+                flash('At least one document is required.', 'danger')
+                return redirect(request.url)
+
+            document_paths_str = ','.join(document_paths)
+            tracking_id = str(uuid.uuid4())[:10]
+
+            # Create loan application
+            new_loan = Loan(
+                user_id=user_id,
+                loan_amount=loan_amount,
+                interest_rate=interest_rate,
+                tenure=tenure,
+                documents=document_paths_str,
+                tracking_id=tracking_id,
+                status=LoanStatus.PENDING.value,
+                emi=emi,
+                amount_due=loan_amount
+            )
+
+            db.session.add(new_loan)
+            db.session.commit()
+            flash('Your loan application has been submitted successfully.', 'success')
+            return redirect(url_for('loan_confirmation', tracking_id=tracking_id))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error processing loan application: {str(e)}', 'danger')
+            print(f"Error: {e}")  # Log error to console for debugging
             return redirect(request.url)
-
-        document_paths_str = ','.join(document_paths)
-
-        # Generate a unique tracking ID for the loan application
-        tracking_id = str(uuid.uuid4())[:10]
-
-        # Create the loan with calculated EMI and initial amount_due as loan_amount
-        new_loan = Loan(
-            user_id=user_id,
-            loan_amount=loan_amount,
-            interest_rate=interest_rate,
-            tenure=tenure,
-            documents=document_paths_str,
-            tracking_id=tracking_id,
-            status=LoanStatus.PENDING.value,
-            emi=emi,
-            amount_due=loan_amount  # Initialize amount_due with the loan amount
-        )
-
-        db.session.add(new_loan)
-        db.session.commit()
-
-        flash('Your loan application has been submitted successfully.', 'success')
-        return redirect(url_for('loan_confirmation', tracking_id=tracking_id))
 
     return render_template('loan.html')
 
@@ -695,9 +693,13 @@ def approve_loan(loan_id):
         # Retrieve the user associated with the loan
         user = UserInfo.query.get(loan.user_id)
         
-        # Send email notification to the user
+        # Add the loan amount to the user's balance
         if user:
             try:
+                user.balance += loan.loan_amount  # Assuming 'balance' and 'amount' columns exist
+                db.session.commit()
+                
+                # Send email notification to the user
                 msg = Message(
                     'Loan Application Approved',
                     sender=app.config['MAIL_DEFAULT_SENDER'],
@@ -705,15 +707,18 @@ def approve_loan(loan_id):
                 )
                 msg.body = (f"Dear {user.first_name},\n\n"
                             f"Your loan application with tracking ID {loan.tracking_id} "
-                            f"has been approved.\n\nThank you for choosing our bank.")
+                            f"has been approved and the loan amount of {loan.amount} has been "
+                            f"credited to your account balance.\n\nThank you for choosing our bank.")
                 mail.send(msg)
-                flash('Loan approved, and notification email sent.', 'success')
+                flash('Loan approved, amount credited, and notification email sent.', 'success')
             except Exception as e:
-                flash(f'Loan approved, but email notification failed: {e}', 'warning')
+                db.session.rollback()  # Rollback if there's an error with the email
+                flash(f'Loan approved and amount credited, but email notification failed: {e}', 'warning')
         else:
             flash('User associated with this loan could not be found.', 'danger')
 
     return redirect(url_for('manage_loans'))
+
 
 @app.route('/admin/deny_loan/<int:loan_id>', methods=['POST'])
 def deny_loan(loan_id):
