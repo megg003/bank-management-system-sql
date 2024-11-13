@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from sqlalchemy import Numeric
 from decimal import Decimal, getcontext
+from sqlalchemy import func
 
 # Apply nest_asyncio to avoid event loop issues
 nest_asyncio.apply()
