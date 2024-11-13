@@ -14,6 +14,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from sqlalchemy import Numeric
 from decimal import Decimal, getcontext
+from sqlalchemy import func
 
 # Apply nest_asyncio to avoid event loop issues
 nest_asyncio.apply()
@@ -847,8 +848,35 @@ def uploaded_file(filename):
 @app.route('/view_user/<int:user_id>')
 def view_user(user_id):
     user = UserInfo.query.get(user_id)
+    
     if user:
-        return render_template('view_user.html', user=user)
+        # Nested query to count the approved loans for this user
+        approved_loan_count = db.session.query(func.count(Loan.loan_id)).filter(
+            Loan.user_id == user_id,
+            Loan.status == LoanStatus.APPROVED.value
+        ).scalar() or 0
+
+        # Aggregate query to calculate the total approved loan amount for this user
+        total_approved_loan_amount = db.session.query(func.sum(Loan.amount_due)).filter(
+            Loan.user_id == user_id,
+            Loan.status == LoanStatus.APPROVED.value
+        ).scalar() or 0
+
+        # Nested query to get the average loan amount for this user
+        average_loan_amount = db.session.query(func.avg(Loan.amount_due)).filter(
+            Loan.user_id == user_id,
+            Loan.status == LoanStatus.APPROVED.value
+        ).scalar() or 0
+
+        return render_template(
+            'view_user.html', 
+            user=user, 
+            approved_loan_count=approved_loan_count,
+            total_approved_loan_amount=total_approved_loan_amount,
+            average_loan_amount=average_loan_amount
+        )
+
+    flash('User not found.', 'danger')
     return redirect(url_for('manage_users'))
 
 # Route to delete a user
