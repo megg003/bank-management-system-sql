@@ -19,33 +19,15 @@
         <div class="card-body">
             {% if user %}
             <ul class="list-group">
-                <li class="list-group-item">
-                    <strong>Account ID:</strong> {{ user.account_id }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Account Holder Name:</strong> {{ user.first_name }} {{ user.last_name }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Account Type:</strong> {{ user.access_type }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Email:</strong> {{ user.email }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Phone Number:</strong> {{ user.phone_number }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Address:</strong> {{ user.address }}, {{ user.city }}, {{ user.state }}, {{ user.pincode }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Date of Birth:</strong> {{ user.date_of_birth.strftime('%Y-%m-%d') }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Status:</strong> {{ user.user_status.value }}
-                </li>
-                <li class="list-group-item">
-                    <strong>Balance:</strong> ${{ '%.2f' % user.balance }}  <!-- Display balance here -->
-                </li>
+                <li class="list-group-item"><strong>Account ID:</strong> {{ user.account_id }}</li>
+                <li class="list-group-item"><strong>Account Holder Name:</strong> {{ user.first_name }} {{ user.last_name }}</li>
+                <li class="list-group-item"><strong>Account Type:</strong> {{ user.access_type }}</li>
+                <li class="list-group-item"><strong>Email:</strong> {{ user.email }}</li>
+                <li class="list-group-item"><strong>Phone Number:</strong> {{ user.phone_number }}</li>
+                <li class="list-group-item"><strong>Address:</strong> {{ user.address }}, {{ user.city }}, {{ user.state }}, {{ user.pincode }}</li>
+                <li class="list-group-item"><strong>Date of Birth:</strong> {{ user.date_of_birth.strftime('%Y-%m-%d') }}</li>
+                <li class="list-group-item"><strong>Status:</strong> {{ user.user_status.value }}</li>
+                <li class="list-group-item"><strong>Balance:</strong> ${{ '%.2f' % user.balance }}</li>
             </ul>
 
             <!-- Loan Details Section -->
@@ -126,6 +108,7 @@
                         <th>Tenure (Months)</th>
                         <th>Final Amount</th>
                         <th>Created At</th>
+                        <th>Action</th> <!-- New column for the "Close" button -->
                     </tr>
                 </thead>
                 <tbody>
@@ -137,14 +120,19 @@
                         <td>{{ deposit.tenure }}</td>
                         <td>{{ deposit.final_amount }}</td>
                         <td>{{ deposit.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if deposit.status != 'closed' %}
+                                <form action="{{ url_for('close_deposit', deposit_id=deposit.deposit_ID) }}" method="POST">
+                                    <button type="submit" class="btn btn-warning btn-sm">Close</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted">Closed</span>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-
-            {% else %}
-            <div class="alert alert-danger">Account not found.</div>
-            {% endif %}
 
             <!-- Delete Account Button -->
             <div class="text-center mt-4">
@@ -175,7 +163,9 @@
                 <!-- Logout Button -->
                 <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
             </div>
+            {% endif %} <!-- Close the {% if user %} block here -->{% endif %}
         </div>
     </div>
 </div>
 {% endblock %}
+
