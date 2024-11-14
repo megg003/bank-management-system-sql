@@ -47,8 +47,8 @@
                 <div class="card-body">
                     <h5 class="card-title" style="color: #ffca28;">Personal Banking</h5>
                     <p class="card-text">Secure accounts, seamless transactions, and financial advice tailored to you.</p>
-                    <a href="{{ url_for('deposit') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Deposit</a>
-                    <a href="{{ url_for('atm') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">ATM</a>
+                    <a href="{{ url_for('account_details') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Account Details</a>
+                    <a href="{{ url_for('atm') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Make Transactions</a>
                 </div>
             </div>
         </div>
@@ -64,9 +64,9 @@
         <div class="col-md-4 mb-4">
             <div class="card border-0 shadow" style="background-color: #004d40; color: white;">
                 <div class="card-body">
-                    <h5 class="card-title" style="color: #ffca28;">Investment Plans</h5>
-                    <p class="card-text">Grow your wealth with our diversified and expertly managed investment options.</p>
-                    <a href="#" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Get Started</a>
+                    <h5 class="card-title" style="color: #ffca28;">Deposit</h5>
+                    <p class="card-text">Unlock your future with a fixed deposit today! Start saving and watch your money grow!</p>
+                    <a href="{{ url_for('deposit') }}" class="btn btn-outline-light" style="border-color: #ffca28; color: #ffca28;">Get Started</a>
                 </div>
             </div>
         </div>
