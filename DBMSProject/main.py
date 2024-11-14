@@ -21,9 +21,9 @@ nest_asyncio.apply()
 
 # Create a Flask application instance
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:root@localhost/bank'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:AngelsAndDemons666@localhost/bank'
 app.config['SECRET_KEY'] = "my super secret key"
-UPLOAD_FOLDER = r"C:\DBMS\DBMSProject\uploads"
+UPLOAD_FOLDER = r"C:\Users\91984\Downloads\DBMSProject\uploads"
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # Configure Flask-Mail
@@ -355,96 +355,9 @@ def account_details():
     return render_template('account_details.html', user=user, loans=loans, deposits=deposits, transactions=transactions)
 
 
-@app.route('/delete_account', methods=['POST'])
-def delete_account():
-    user_id = request.form.get('user_id')
-    password = request.form.get('password')  # Get the password entered by the user
-    
-    if not user_id or not password:
-        flash("User ID or password is missing.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-    
-    user = UserInfo.query.filter_by(user_id=user_id).first()
+import logging
 
-    if not user:
-        flash("Account not found.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-    
-    # Verify the password
-    if not check_password_hash(user.password, password):
-        flash("Incorrect password. Please try again.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-    
-    # Simulate trigger logic - check the conditions before account deletion
-    # Check if the user has any approved loans
-    pending_loans = Loan.query.filter_by(user_id=user.user_id, status='approved').all()
-    
-    if pending_loans:
-        flash("You cannot delete your account because you have pending loans.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-    # Check if the user has any deposits
-    user_deposits = Deposit.query.filter_by(account_id=user.account_id).all()
-    
-    if user_deposits:
-        flash("You cannot delete your account because you have deposits.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-    # Check if the user balance is 0
-    if user.balance != 0:
-        flash("You cannot delete your account because your balance is not zero.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-    # If all conditions are met, proceed with the account deletion
-    try:
-        db.session.delete(user)  # Delete the user account
-        db.session.commit()
-        
-        # Send email notification after successful deletion
-        send_deletion_email(user)
-        
-        flash("Your account has been deleted successfully.", "success")
-        return redirect(url_for('homepage'))  # Redirect to the homepage after deletion
-    except Exception as e:
-        db.session.rollback()  # Rollback in case of any error
-        flash("An error occurred while processing your account deletion. Please try again.", "danger")
-        return redirect(url_for('account_details'))  # Redirect to account details page
-
-def send_deletion_email(user):
-    """Send an email to the user notifying them of account deletion."""
-    msg = Message(
-        subject="Account Deletion Confirmation",
-        recipients=[user.email],
-        body=f"Dear {user.first_name},\n\nYour account has been successfully deleted. If you did not request this, please contact us immediately.\n\nBest regards,\nYour Bank Team"
-    )
-    try:
-        mail.send(msg)
-    except Exception as e:
-        print(f"Error sending email: {e}")
-        
-@app.route('/confirm_delete_account', methods=['POST'])
-def confirm_delete_account():
-    user_id = request.form.get('user_id')
-    
-    if not user_id:
-        flash("User ID is missing.", "danger")
-        return redirect(url_for('account_details'))
-
-    user = UserInfo.query.filter_by(user_id=user_id).first()
-
-    if not user:
-        flash("Account not found.", "danger")
-        return redirect(url_for('account_details'))
-
-    # Fetch transactions in case the user comes back to this route
-    page = request.args.get('page', 1, type=int)
-    transactions = Transactions.query.filter_by(user_id=user_id) \
-        .order_by(Transactions.timestamp.desc()) \
-        .paginate(page=page, per_page=10, error_out=False)
-
-    # Show the password confirmation form
-    return render_template('account_details.html', user=user, transactions=transactions, show_delete_confirmation=True)
-
+logging.basicConfig(level=logging.ERROR)
 
 from flask import request
 @app.route('/pay_emi/<int:loan_id>', methods=['POST', 'GET'])
