@@ -324,7 +324,11 @@ def atm():
 
     return render_template('atm.html', user=user, create_pin=False)
 
-@app.route('/account_details')
+from sqlalchemy import text
+
+from sqlalchemy import text
+
+@app.route('/account_details', methods=['GET', 'POST'])
 def account_details():
     user_id = session.get('user_id')  # Get the logged-in user's ID from the session
     
@@ -350,10 +354,26 @@ def account_details():
     transactions = Transactions.query.filter_by(user_id=user_id) \
         .order_by(Transactions.timestamp.desc()) \
         .paginate(page=page, per_page=10, error_out=False)
-    
-    # Return the template with the necessary data
-    return render_template('account_details.html', user=user, loans=loans, deposits=deposits, transactions=transactions)
 
+    # Handle POST request when "Show Account Summary" button is clicked
+    account_summary = []
+    if request.method == 'POST':
+        try:
+            # Use SQLAlchemy's text() to safely execute raw SQL on the 'accounts' table
+            account_summary = db.session.execute(
+                text("""
+                    SELECT * FROM accounts
+                    WHERE user_id = :user_id
+                """),
+                {'user_id': user_id}
+            ).fetchall()
+
+        except Exception as e:
+            flash(f"Error fetching account summary: {str(e)}", 'danger')
+
+    # Return the template with the necessary data
+    return render_template('account_details.html', user=user, loans=loans, deposits=deposits, 
+                           transactions=transactions, account_summary=account_summary)
 
 import logging
 

@@ -27,7 +27,7 @@
                 <li class="list-group-item"><strong>Address:</strong> {{ user.address }}, {{ user.city }}, {{ user.state }}, {{ user.pincode }}</li>
                 <li class="list-group-item"><strong>Date of Birth:</strong> {{ user.date_of_birth.strftime('%Y-%m-%d') }}</li>
                 <li class="list-group-item"><strong>Status:</strong> {{ user.user_status.value }}</li>
-                <li class="list-group-item"><strong>Balance:</strong> ${{ '%.2f' % (user.balance|default(0.00)) }}</li>
+                <li class="list-group-item"><strong>Balance:</strong> ${{ '%.2f' % (user.balance|float|default(0.00)) }}</li>
             </ul>
 
             <!-- Loan Details Section -->
@@ -48,11 +48,11 @@
                     {% for loan in loans %}
                     <tr>
                         <td>{{ loan.loan_id }}</td>
-                        <td>${{ '%.2f' % loan.loan_amount }}</td>
+                        <td>${{ '%.2f' % (loan.loan_amount|float) }}</td>
                         <td>{{ loan.status }}</td>
-                        <td>{{ '%.2f' % loan.interest_rate }}%</td>
-                        <td>${{ '%.2f' % loan.emi }}</td>
-                        <td>${{ '%.2f' % loan.amount_due }}</td>
+                        <td>{{ '%.2f' % (loan.interest_rate|float) }}%</td>
+                        <td>${{ '%.2f' % (loan.emi|float) }}</td>
+                        <td>${{ '%.2f' % (loan.amount_due|float) }}</td>
                         <td>
                             {% if loan.status == 'APPROVED' and user.balance >= loan.emi %}
                                 <a href="{{ url_for('pay_emi', loan_id=loan.loan_id) }}" class="btn btn-success btn-sm">Pay EMI</a>
@@ -80,7 +80,7 @@
                     <tr>
                         <td>{{ transaction.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>{{ transaction.transaction_type }}</td>
-                        <td>${{ '%.2f' % transaction.amount }}</td>
+                        <td>${{ '%.2f' % (transaction.amount|float) }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -115,10 +115,10 @@
                     {% for deposit in deposits %}
                     <tr>
                         <td>{{ deposit.deposit_ID }}</td>
-                        <td>${{ '%.2f' % deposit.principal_amount }}</td>
-                        <td>{{ '%.2f' % deposit.interest_rate }}%</td>
+                        <td>${{ '%.2f' % (deposit.principal_amount|float) }}</td>
+                        <td>{{ '%.2f' % (deposit.interest_rate|float) }}%</td>
                         <td>{{ deposit.tenure }}</td>
-                        <td>${{ '%.2f' % deposit.final_amount }}</td>
+                        <td>${{ '%.2f' % (deposit.final_amount|float) }}</td>
                         <td>{{ deposit.created_at.strftime('%Y-%m-%d') }}</td>
                         <td>
                             {% if deposit.status != 'closed' %}
@@ -134,6 +134,33 @@
                 </tbody>
             </table>
 
+            <!-- Show Account Summary Section -->
+            <h4 class="mt-4" style="color: white;">Account Summary</h4>
+            <form method="POST" action="{{ url_for('account_details') }}">
+                <button type="submit" class="btn btn-info btn-sm">Show Account Summary</button>
+            </form>
+
+            {% if account_summary %}
+            <table class="table table-bordered mt-3" style="color: white;">
+                <thead>
+                    <tr>
+                        <th>Account ID</th>
+                        <th>Type of Account</th>
+                        <th>Final Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for account in account_summary %}
+                        <tr>
+                            <td>{{ account.account_id }}</td>  <!-- Account ID -->
+                            <td>{{ account.type_of_account }}</td>  <!-- Type of Account -->
+                            <td>${{ '%.2f' % (account.final_amount) }}</td>  <!-- Final Amount -->
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+
             <div class="text-center mt-4">
                 <a href="{{ url_for('update_user') }}" class="btn btn-primary">Edit Profile</a>
                 <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Back to Home</a>
@@ -146,4 +173,3 @@
     </div>
 </div>
 {% endblock %}
-
