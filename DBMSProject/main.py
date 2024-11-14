@@ -328,6 +328,9 @@ from sqlalchemy import text
 
 from sqlalchemy import text
 
+from flask_mail import Message
+from flask import current_app
+
 @app.route('/account_details', methods=['GET', 'POST'])
 def account_details():
     user_id = session.get('user_id')  # Get the logged-in user's ID from the session
@@ -361,12 +364,31 @@ def account_details():
         try:
             # Use SQLAlchemy's text() to safely execute raw SQL on the 'accounts' table
             account_summary = db.session.execute(
-                text("""
+                text(""" 
                     SELECT * FROM accounts
                     WHERE user_id = :user_id
                 """),
                 {'user_id': user_id}
             ).fetchall()
+
+            # Format account summary for email
+            summary_html = "<h3>Account Summary</h3><table border='1'><tr><th>Account ID</th><th>Type of Account</th><th>Final Amount</th></tr>"
+            for account in account_summary:
+                summary_html += f"<tr><td>{account[1]}</td><td>{account[2]}</td><td>${account[3]:.2f}</td></tr>"
+            summary_html += "</table>"
+
+            # Create the email message
+            msg = Message(
+                'Your Account Summary',
+                sender=current_app.config['MAIL_DEFAULT_SENDER'],  # Sender's email from config
+                recipients=[user.email]  # Recipient is the logged-in user's email
+            )
+            msg.html = summary_html  # Set the email body with the HTML formatted account summary
+            
+            # Send the email
+            mail.send(msg)
+
+            flash('Account summary sent to your email.', 'success')
 
         except Exception as e:
             flash(f"Error fetching account summary: {str(e)}", 'danger')
