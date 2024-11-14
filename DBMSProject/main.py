@@ -362,19 +362,17 @@ def account_details():
     account_summary = []
     if request.method == 'POST':
         try:
-            # Use SQLAlchemy's text() to safely execute raw SQL on the 'accounts' table
-            account_summary = db.session.execute(
-                text(""" 
-                    SELECT * FROM accounts
-                    WHERE user_id = :user_id
-                """),
+            # Call the stored procedure to get the account summary
+            result = db.session.execute(
+                text("CALL get_account_summary(:user_id)"),
                 {'user_id': user_id}
-            ).fetchall()
+            )
+            account_summary = result.fetchall()  # Fetch all rows returned by the stored procedure
 
             # Format account summary for email
             summary_html = "<h3>Account Summary</h3><table border='1'><tr><th>Account ID</th><th>Type of Account</th><th>Final Amount</th></tr>"
             for account in account_summary:
-                summary_html += f"<tr><td>{account[1]}</td><td>{account[2]}</td><td>${account[3]:.2f}</td></tr>"
+                summary_html += f"<tr><td>{account[1]}</td><td>{account[2]}</td><td>${float(account[3]):.2f}</td></tr>"
             summary_html += "</table>"
 
             # Create the email message
