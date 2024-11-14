@@ -27,7 +27,7 @@
                 <li class="list-group-item"><strong>Address:</strong> {{ user.address }}, {{ user.city }}, {{ user.state }}, {{ user.pincode }}</li>
                 <li class="list-group-item"><strong>Date of Birth:</strong> {{ user.date_of_birth.strftime('%Y-%m-%d') }}</li>
                 <li class="list-group-item"><strong>Status:</strong> {{ user.user_status.value }}</li>
-                <li class="list-group-item"><strong>Balance:</strong> ${{ '%.2f' % user.balance }}</li>
+                <li class="list-group-item"><strong>Balance:</strong> ${{ '%.2f' % (user.balance|default(0.00)) }}</li>
             </ul>
 
             <!-- Loan Details Section -->
@@ -48,11 +48,11 @@
                     {% for loan in loans %}
                     <tr>
                         <td>{{ loan.loan_id }}</td>
-                        <td>{{ loan.loan_amount }}</td>
+                        <td>${{ '%.2f' % loan.loan_amount }}</td>
                         <td>{{ loan.status }}</td>
-                        <td>{{ loan.interest_rate }}</td>
-                        <td>{{ loan.emi }}</td>
-                        <td>{{ loan.amount_due }}</td>
+                        <td>{{ '%.2f' % loan.interest_rate }}%</td>
+                        <td>${{ '%.2f' % loan.emi }}</td>
+                        <td>${{ '%.2f' % loan.amount_due }}</td>
                         <td>
                             {% if loan.status == 'APPROVED' and user.balance >= loan.emi %}
                                 <a href="{{ url_for('pay_emi', loan_id=loan.loan_id) }}" class="btn btn-success btn-sm">Pay EMI</a>
@@ -66,7 +66,7 @@
             </table>
 
             <!-- Transaction History Section -->
-            <h3>Transaction History</h3>
+            <h4 class="mt-4" style="color: white;">Transaction History</h4>
             <table class="table table-bordered" style="color: white;">
                 <thead>
                     <tr>
@@ -108,17 +108,17 @@
                         <th>Tenure (Months)</th>
                         <th>Final Amount</th>
                         <th>Created At</th>
-                        <th>Action</th> <!-- New column for the "Close" button -->
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for deposit in deposits %}
                     <tr>
                         <td>{{ deposit.deposit_ID }}</td>
-                        <td>{{ deposit.principal_amount }}</td>
-                        <td>{{ deposit.interest_rate }}</td>
+                        <td>${{ '%.2f' % deposit.principal_amount }}</td>
+                        <td>{{ '%.2f' % deposit.interest_rate }}%</td>
                         <td>{{ deposit.tenure }}</td>
-                        <td>{{ deposit.final_amount }}</td>
+                        <td>${{ '%.2f' % deposit.final_amount }}</td>
                         <td>{{ deposit.created_at.strftime('%Y-%m-%d') }}</td>
                         <td>
                             {% if deposit.status != 'closed' %}
@@ -160,10 +160,11 @@
             <div class="text-center mt-4">
                 <a href="{{ url_for('update_user') }}" class="btn btn-primary">Edit Profile</a>
                 <a href="{{ url_for('homepage') }}" class="btn btn-secondary">Back to Home</a>
-                <!-- Logout Button -->
                 <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
             </div>
-            {% endif %} <!-- Close the {% if user %} block here -->{% endif %}
+            {% else %}
+                <p class="text-center" style="color: white;">User details not available.</p>
+            {% endif %}
         </div>
     </div>
 </div>
